@@ -58,7 +58,7 @@ export default function GameClient({
     const channel = supabase
       .channel(`room_${roomCode}`)
       .on(
-        "postgres_changes",
+        "postgres_changes" as any,
         { event: "*", schema: "public", table: "players", filter: `room_code=eq.${roomCode}` },
         (payload: { eventType: string; new: Player }) => {
           if (payload.eventType === "INSERT") {
@@ -71,7 +71,7 @@ export default function GameClient({
         }
       )
       .on(
-        "postgres_changes",
+        "postgres_changes" as any,
         { event: "UPDATE", schema: "public", table: "rooms", filter: `code=eq.${roomCode}` },
         (payload: { new: { status: string } }) => {
           if (payload.new.status) {
