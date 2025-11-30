@@ -1,1 +1,1 @@
-# impostor-app
+# impostor-app-frontend
