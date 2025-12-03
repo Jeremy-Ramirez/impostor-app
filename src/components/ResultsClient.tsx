@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { restartGameAction } from "@/actions/restart-game";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Skull, User, Loader2, ArrowRight } from "lucide-react";
+import { Trophy, Skull, User, Loader2, ArrowRight, RotateCcw } from "lucide-react";
 
 interface Player {
   id: string;
   name: string;
   is_eliminated: boolean;
   is_impostor: boolean;
+  is_host: boolean;
 }
 
 interface Room {
@@ -22,18 +24,29 @@ interface ResultsClientProps {
   roomCode: string;
   room: Room;
   players: Player[];
+  myPlayerId: string;
 }
 
-export default function ResultsClient({ roomCode, room, players }: ResultsClientProps) {
+export default function ResultsClient({ roomCode, room, players, myPlayerId }: ResultsClientProps) {
   const router = useRouter();
   const [showReveal, setShowReveal] = useState(false);
   const [countdown, setCountdown] = useState(8);
+  const [isPending, startTransition] = useTransition();
 
   const lastEliminatedPlayer = players.find(p => p.id === room.last_eliminated_id);
   const isGameOver = room.status === "GAME_OVER";
   const isVictory = isGameOver && room.winner === "VILLAGERS";
   const isDefeat = isGameOver && room.winner === "IMPOSTORS";
   const isContinue = !isGameOver; // status 'playing' or 'turn_loop'
+
+  const myPlayer = players.find(p => p.id === myPlayerId);
+  const isHost = myPlayer?.is_host;
+
+  const handleRestart = () => {
+    startTransition(async () => {
+      await restartGameAction(roomCode);
+    });
+  };
 
   // Suspense effect for Continue scenario
   useEffect(() => {
@@ -51,7 +64,6 @@ export default function ResultsClient({ roomCode, room, players }: ResultsClient
     }
   }, [isContinue, room.status, room.winner]);
 
-  // Auto-redirect for Continue scenario
   // Auto-redirect for Continue scenario
   useEffect(() => {
     if (isContinue && showReveal) {
@@ -100,13 +112,23 @@ export default function ResultsClient({ roomCode, room, players }: ResultsClient
             <h1 className="text-6xl font-black tracking-tighter mb-4 drop-shadow-lg">¡VICTORIA!</h1>
             <p className="text-2xl font-medium opacity-90">El Impostor ha sido eliminado.</p>
           </div>
-          <div className="pt-8">
+          <div className="pt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <button 
               onClick={() => router.push("/")}
               className="px-8 py-4 bg-white text-green-700 font-bold rounded-full text-xl shadow-xl hover:scale-105 transition-transform"
             >
               Volver al Lobby
             </button>
+            {isHost && (
+              <button 
+                onClick={handleRestart}
+                disabled={isPending}
+                className="px-8 py-4 bg-green-800 text-white font-bold rounded-full text-xl shadow-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 border border-green-400/30"
+              >
+                {isPending ? <Loader2 className="animate-spin" /> : <RotateCcw />}
+                Jugar de Nuevo
+              </button>
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -128,13 +150,23 @@ export default function ResultsClient({ roomCode, room, players }: ResultsClient
             <h1 className="text-6xl font-black tracking-tighter mb-4 drop-shadow-lg text-red-200">DERROTA</h1>
             <p className="text-2xl font-medium opacity-90">Los Impostores han ganado.</p>
           </div>
-          <div className="pt-8">
+          <div className="pt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <button 
               onClick={() => router.push("/")}
               className="px-8 py-4 bg-red-950 text-red-200 font-bold rounded-full text-xl shadow-xl hover:scale-105 transition-transform border border-red-500/30"
             >
               Volver al Lobby
             </button>
+             {isHost && (
+              <button 
+                onClick={handleRestart}
+                disabled={isPending}
+                className="px-8 py-4 bg-red-800 text-white font-bold rounded-full text-xl shadow-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 border border-red-400/30"
+              >
+                {isPending ? <Loader2 className="animate-spin" /> : <RotateCcw />}
+                Jugar de Nuevo
+              </button>
+            )}
           </div>
         </motion.div>
       </motion.div>
