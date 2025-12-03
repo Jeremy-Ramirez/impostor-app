@@ -37,24 +37,28 @@ export default function ResultsClient({ roomCode, room, players }: ResultsClient
 
   // Suspense effect for Continue scenario
   useEffect(() => {
+    console.log("[ResultsClient] Mounted. Status:", room.status, "Winner:", room.winner);
     if (isContinue) {
+      console.log("[ResultsClient] Game continues. Starting suspense timer...");
       const timer = setTimeout(() => {
+        console.log("[ResultsClient] Revealing result...");
         setShowReveal(true);
       }, 2000); // 2 seconds suspense
       return () => clearTimeout(timer);
     } else {
+      console.log("[ResultsClient] Game Over. Immediate reveal.");
       setShowReveal(true); // Immediate reveal for Game Over
     }
-  }, [isContinue]);
+  }, [isContinue, room.status, room.winner]);
 
+  // Auto-redirect for Continue scenario
   // Auto-redirect for Continue scenario
   useEffect(() => {
     if (isContinue && showReveal) {
       const interval = setInterval(() => {
         setCountdown((prev) => {
-          if (prev <= 1) {
+          if (prev <= 0) {
             clearInterval(interval);
-            router.push(`/game/${roomCode}/play`);
             return 0;
           }
           return prev - 1;
@@ -62,7 +66,14 @@ export default function ResultsClient({ roomCode, room, players }: ResultsClient
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [isContinue, showReveal, roomCode, router]);
+  }, [isContinue, showReveal]);
+
+  // Trigger navigation when countdown hits 0
+  useEffect(() => {
+    if (isContinue && showReveal && countdown === 0) {
+      router.push(`/game/${roomCode}/play`);
+    }
+  }, [isContinue, showReveal, countdown, roomCode, router]);
 
   const containerVariants: import("framer-motion").Variants = {
     hidden: { opacity: 0 },
