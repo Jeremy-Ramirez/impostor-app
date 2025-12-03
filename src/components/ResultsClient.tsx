@@ -1,6 +1,7 @@
 "use client";
 
 import { restartGameAction } from "@/actions/restart-game";
+import { createClient } from "@/utils/supabase/client";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -63,6 +64,34 @@ export default function ResultsClient({ roomCode, room, players, myPlayerId }: R
       setShowReveal(true); // Immediate reveal for Game Over
     }
   }, [isContinue, room.status, room.winner]);
+
+  // Realtime Subscription for "Play Again"
+  useEffect(() => {
+    if (!isGameOver) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`room_results_${roomCode}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "rooms",
+          filter: `code=eq.${roomCode}`,
+        },
+        (payload: any) => {
+          if (payload.new.status === "playing") {
+            router.push(`/game/${roomCode}/play`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roomCode, isGameOver, router]);
 
   // Auto-redirect for Continue scenario
   useEffect(() => {
