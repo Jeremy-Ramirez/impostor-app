@@ -36,7 +36,19 @@ export default async function PlayPage({
     .eq("code", roomCode)
     .single();
 
-  if (!room || room.status !== "playing") {
+  if (!room) {
+    redirect(`/game/${roomCode}`);
+  }
+
+  if (room.status === "voting") {
+    redirect(`/game/${roomCode}/vote`);
+  }
+
+  if (room.status === "GAME_OVER") {
+    redirect(`/game/${roomCode}/results`);
+  }
+
+  if (room.status !== "playing") {
     redirect(`/game/${roomCode}`);
   }
 
