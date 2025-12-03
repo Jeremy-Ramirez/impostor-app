@@ -1,8 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import PlayerListHorizontal from "@/components/PlayerListHorizontal";
 import RoleCard from "@/components/RoleCard";
+import GameSession from "@/components/GameSession";
 
 export default async function PlayPage({
   params,
@@ -32,7 +32,7 @@ export default async function PlayPage({
   // 2. Get Room Data (Securely)
   const { data: room } = await supabase
     .from("rooms")
-    .select("theme, secret_word, status")
+    .select("theme, secret_word, status, current_turn_index, round_state")
     .eq("code", roomCode)
     .single();
 
@@ -47,7 +47,7 @@ export default async function PlayPage({
   // 4. Get All Players for the list
   const { data: allPlayers } = await supabase
     .from("players")
-    .select("id, name, is_host")
+    .select("id, name, is_host, created_at")
     .eq("room_code", roomCode);
 
   return (
@@ -63,7 +63,7 @@ export default async function PlayPage({
       </header>
 
       {/* Role Reveal (Center) */}
-      <div className="flex-1 flex items-center justify-center w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center w-full max-w-md my-8">
         <RoleCard
           isImpostor={isImpostor}
           secretWord={secretWord}
@@ -71,9 +71,15 @@ export default async function PlayPage({
         />
       </div>
 
-      {/* Player List (Bottom) */}
-      <div className="w-full max-w-2xl mt-8">
-        <PlayerListHorizontal players={allPlayers || []} currentPlayerId={playerId} />
+      {/* Game Session (Bottom) */}
+      <div className="w-full max-w-2xl">
+        <GameSession 
+          roomCode={roomCode}
+          initialPlayers={allPlayers || []}
+          myPlayerId={playerId}
+          initialTurnIndex={room.current_turn_index || 0}
+          initialRoundState={room.round_state || "TURN_LOOP"}
+        />
       </div>
 
       {/* Background Elements */}
