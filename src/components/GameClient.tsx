@@ -149,7 +149,19 @@ export default function GameClient({
       <div className="text-center space-y-4">
         <div className="inline-block rounded-full bg-white/5 px-6 py-2 border border-white/10">
           <span className="text-gray-400 uppercase text-xs tracking-widest">Código de Sala</span>
-          <p className="text-4xl font-black text-white tracking-[0.2em] mt-1">{roomCode}</p>
+          <button
+            onClick={async () => {
+              await navigator.clipboard.writeText(roomCode);
+
+            }}
+            className="group relative text-4xl font-black text-white tracking-[0.2em] mt-1 cursor-pointer transition-colors duration-200 hover:text-impostor-primary"
+            title="Click para copiar el código de sala"
+          >
+            {roomCode}
+            <span className="absolute left-1/2 -bottom-6 -translate-x-1/2 text-xs font-normal text-gray-400 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              Copiar
+            </span>
+          </button>
         </div>
         <p className="text-gray-400">
           Esperando jugadores... ({players.length})
